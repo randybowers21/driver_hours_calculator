@@ -5,7 +5,7 @@ import pandas as pd
 #LOCAL
 
 from driver_hours_calculator.fleets import Fleet
-from driver_hours_calculator.driver import Driver, AllDrivers
+from driver_hours_calculator.drivers import Driver, AllDrivers
 
 class TestDriver(unittest.TestCase):
     #SINGLE DRIVER TESTS

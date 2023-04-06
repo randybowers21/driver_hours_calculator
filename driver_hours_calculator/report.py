@@ -7,7 +7,7 @@ import pandas as pd
 import win32com.client
 #LOCAL
 from errors import InvalidWorkTimesError
-from driver import Driver, AllDrivers
+from driver_hours_calculator.drivers import Driver, AllDrivers
 from work_periods import WorkWeek
 from helper_functions import get_previous_sunday
 import config
@@ -155,7 +155,7 @@ class FinalHoursReport:
 
         newmail.Send()
 
-    def generate_hours_report(self, send_email: bool=False, TESTING=False) -> str:
+    def generate_hours_report(self, TESTING=False) -> str:
         """ 
             Creates driver work weeks and Saves Report dataframe to csv.
             Returns the location of the new File.
