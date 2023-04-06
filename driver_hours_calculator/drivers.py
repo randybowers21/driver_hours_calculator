@@ -3,12 +3,12 @@ from typing import List
 #3RD PARTY
 import pandas as pd
 #LOCAL
-from fleets import FleetFactory
+from driver_hours_calculator.fleets import FleetFactory
 
 class AllDrivers:
-    def __init__(self, raw_hours_dataframe: pd.DataFrame) -> None:
+    def __init__(self, raw_hours_dataframe: pd.DataFrame, master_driver_file_location: str ='X:\Driver Hours\Master File.xlsx') -> None:
         self.raw_hours_dataframe = raw_hours_dataframe
-        self.master_driver_file = 'Master File.xlsx'
+        self.master_driver_file = master_driver_file_location
         self.master_driver_list_sheet_name = 'Drivers'
         self.drivers = None
         self.create_drivers()

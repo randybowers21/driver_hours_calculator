@@ -6,11 +6,9 @@ from typing import List
 import pandas as pd
 import win32com.client
 #LOCAL
-from errors import InvalidWorkTimesError
+from driver_hours_calculator.errors import InvalidWorkTimesError
 from driver_hours_calculator.drivers import Driver, AllDrivers
-from work_periods import WorkWeek
-from helper_functions import get_previous_sunday
-import config
+from driver_hours_calculator.work_periods import WorkWeek
 
 class RawHoursReport:
     def __init__(self, omnitracs_file_name: str, week_start: datetime) -> None:

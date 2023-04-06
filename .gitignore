@@ -3,6 +3,11 @@ config.py
 exampletkinter.py
 Master File.xlsx
 .venv/
+htmlcov/
+
+python.spec
+driver_hours_calculator.spec
+run.spec
 
 #STUFF FROM GITHUB BOILDERPLATE
 # Byte-compiled / optimized / DLL files

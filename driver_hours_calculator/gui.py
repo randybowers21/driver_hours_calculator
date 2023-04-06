@@ -5,10 +5,10 @@ import tkinter.messagebox
 import customtkinter
 from customtkinter import filedialog
 #LOCAL
-from report import RawHoursReport, FinalHoursReport
-from driver_hours_calculator.drivers import AllDrivers
-from helper_functions import get_previous_sunday
-import config
+import driver_hours_calculator.report as report
+import driver_hours_calculator.drivers as drivers
+from driver_hours_calculator.helper_functions import get_previous_sunday
+import driver_hours_calculator.config as config
 
 customtkinter.set_appearance_mode('Dark')  # Modes: 'System' (standard), 'Dark', 'Light'
 customtkinter.set_default_color_theme('blue')  # Themes: 'blue' (standard), 'green', 'dark-blue'
@@ -89,9 +89,9 @@ class UserInterface(customtkinter.CTk):
         self.update_button_text('Creating Report . . .')
         if self.file_name:
             start_date = get_previous_sunday(1)
-            raw_hours_report = RawHoursReport(self.file_name, week_start=start_date)
-            all_drivers = AllDrivers(raw_hours_report.raw_hours_dataframe)
-            final_report = FinalHoursReport(raw_hours_report=raw_hours_report, all_drivers=all_drivers)
+            raw_hours_report = report.RawHoursReport(self.file_name, week_start=start_date)
+            all_drivers = drivers.AllDrivers(raw_hours_report.raw_hours_dataframe)
+            final_report = report.FinalHoursReport(raw_hours_report=raw_hours_report, all_drivers=all_drivers)
             file_name = final_report.generate_hours_report()
 
             if send_email:
