@@ -1,7 +1,7 @@
 #PYTHON
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
-#3RD PARTY
+#PIP
 #LOCAL
 from driver_hours_calculator.helper_functions import get_previous_sunday
 

@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 import os
 from typing import List
-#3RD PARTY
+#PIP
 import pandas as pd
 import win32com.client
 #LOCAL
@@ -26,7 +26,7 @@ class RawHoursReport:
     
     def filter_dataframe_by_input_week_start(self):
         """ Resets dataframe filtered by input week_start """
-        week_end = self.week_start + timedelta(days=7)
+        week_end = self.week_start + timedelta(days=8)
         mask = (self.raw_hours_dataframe['StartTime'] > self.week_start) & (self.raw_hours_dataframe['StartTime'] < week_end)
         self.raw_hours_dataframe = self.raw_hours_dataframe.loc[mask]
 
@@ -39,6 +39,7 @@ class SingleDriverReport:
         self.remove_midnight_times()
         self.remove_duplicate_activities()
         self.all_times_worked = self.get_times_worked()
+
         try:
             self.set_start_stop_times(self.all_times_worked)
         except InvalidWorkTimesError as e:
@@ -63,14 +64,13 @@ class SingleDriverReport:
         """ Finds relevent times worked from driver_hours_dataframe and sets "start_times" and "stop_times" using "set_start_stop_times. """
         first = True
         times_worked = []
-        for index, row in self.driver_hours_dataframe.iterrows():
+        for index, current_row in self.driver_hours_dataframe.iterrows():
             if first: #Skip first iteration
                 times_worked.append(self.driver_hours_dataframe.iloc[0]['StartTime']) #Add First Time to list
                 times_worked.append(self.driver_hours_dataframe.iloc[-1]['StartTime']) #Add Last time to list
                 first = False
             else:
                 previous_row = self.driver_hours_dataframe.iloc[index - 1]
-                current_row = row
                 duration = (current_row['StartTime'] - previous_row['StartTime']).total_seconds()
                 if duration > self.seconds_in_7_hours and previous_row['Activity'] != 'Driving':
                     times_worked.append(previous_row['StartTime'])
@@ -84,7 +84,6 @@ class SingleDriverReport:
 
     def set_start_stop_times(self, times_worked: List[datetime]):
         """ Sets start and stop times """
-        times_worked.sort()
         if len(times_worked) % 2 == 0: #Check there is even number of times.
             self.start_times = [time for i, time in enumerate(times_worked) if i % 2 == 0] #Every even time is a start time
             self.stop_times = [time for i, time in enumerate(times_worked) if i % 2 != 0] #Every odd time is an end time

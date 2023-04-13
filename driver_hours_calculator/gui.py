@@ -1,7 +1,7 @@
 #PYTHON
 from datetime import datetime
 import tkinter.messagebox
-#3RD PARTY
+#PIP
 import customtkinter
 from customtkinter import filedialog
 #LOCAL

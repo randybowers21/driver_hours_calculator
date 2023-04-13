@@ -1,5 +1,5 @@
 #PYTHON
-#3RD PARTY
+#PIP
 #LOCAL
 import driver_hours_calculator.gui as gui
 
