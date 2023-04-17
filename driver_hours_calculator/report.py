@@ -39,7 +39,7 @@ class SingleDriverReport:
         self.remove_midnight_times()
         self.remove_duplicate_activities()
         self.all_times_worked = self.get_times_worked()
-
+    
         try:
             self.set_start_stop_times(self.all_times_worked)
         except InvalidWorkTimesError as e:
@@ -90,7 +90,6 @@ class SingleDriverReport:
         else:
             raise InvalidWorkTimesError(self.driver.code, 'There must be the same amount of start times and stop times')
     
-
 class FinalHoursReport:
     def __init__(self, raw_hours_report: RawHoursReport, all_drivers: AllDrivers) -> None:
         self.week_start = raw_hours_report.week_start
@@ -134,7 +133,7 @@ class FinalHoursReport:
                 data[f'{day_name} Pay'] = f'${day.pay}.00'
 
             data['Personal Conveyance'] = week.personal_conveyance_duration
-
+            data['Possible Errors'] = week.possible_errors
             info.append(data)
 
         return pd.DataFrame(info)

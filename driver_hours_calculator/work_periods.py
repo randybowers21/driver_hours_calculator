@@ -19,6 +19,7 @@ class WorkWeek:
         self.create_empty_work_days()
         self.sort_days_worked_by_start_time()
         self.calculate_totals()
+        self.check_possible_errors()
         
     def create_work_days(self):
         """
@@ -65,6 +66,17 @@ class WorkWeek:
 
     def sort_days_worked_by_start_time(self):
         self.days_worked.sort(key=lambda x: x.start_time)
+
+    def check_possible_errors(self):
+        """Searches times worked for days and week. And sets a marker (self.possible_errors) if there are possible errors
+
+        """
+        self.possible_errors = False
+        for day in self.days_worked:
+            if day.hours_worked < 5 and day.hours_worked > 0:
+                self.possible_errors = True
+        if self.total_hours_worked > 70 or self.total_hours_worked < 20 or self.hours_per_day < 5:
+            self.possible_errors = True
 
     def __repr__(self) -> str:
         return (
