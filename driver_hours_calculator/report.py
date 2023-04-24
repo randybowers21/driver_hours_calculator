@@ -9,6 +9,7 @@ import win32com.client
 from driver_hours_calculator.errors import InvalidWorkTimesError
 from driver_hours_calculator.drivers import Driver, AllDrivers
 from driver_hours_calculator.work_periods import WorkWeek
+from driver_hours_calculator.helper_functions import get_previous_sunday
 
 class RawHoursReport:
     def __init__(self, omnitracs_file_name: str, week_start: datetime) -> None:
@@ -26,8 +27,9 @@ class RawHoursReport:
     
     def filter_dataframe_by_input_week_start(self):
         """ Resets dataframe filtered by input week_start """
-        week_end = self.week_start + timedelta(days=8)
-        mask = (self.raw_hours_dataframe['StartTime'] > self.week_start) & (self.raw_hours_dataframe['StartTime'] < week_end)
+        week_end = self.week_start + timedelta(days=9)
+        week_start = self.week_start - timedelta(days=1)
+        mask = (self.raw_hours_dataframe['StartTime'] > week_start) & (self.raw_hours_dataframe['StartTime'] < week_end)
         self.raw_hours_dataframe = self.raw_hours_dataframe.loc[mask]
 
 class SingleDriverReport:
@@ -84,9 +86,18 @@ class SingleDriverReport:
 
     def set_start_stop_times(self, times_worked: List[datetime]):
         """ Sets start and stop times """
+        week_start = get_previous_sunday(1)
+        self.start_times = []
+        self.stop_times = []
+
         if len(times_worked) % 2 == 0: #Check there is even number of times.
-            self.start_times = [time for i, time in enumerate(times_worked) if i % 2 == 0] #Every even time is a start time
-            self.stop_times = [time for i, time in enumerate(times_worked) if i % 2 != 0] #Every odd time is an end time
+            start_times = [time for i, time in enumerate(times_worked) if i % 2 == 0] #Every even time is a start time
+            stop_times = [time for i, time in enumerate(times_worked) if i % 2 != 0] #Every odd time is an end time
+            #Add Times to list if start time is after the start of the week.
+            for i, time in enumerate(start_times):
+                if time >= week_start:
+                    self.start_times.append(time)
+                    self.stop_times.append(stop_times[i])
         else:
             raise InvalidWorkTimesError(self.driver.code, 'There must be the same amount of start times and stop times')
     
