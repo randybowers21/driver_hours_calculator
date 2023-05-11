@@ -1,6 +1,7 @@
 #PYTHON
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
+import decimal
 #PIP
 #LOCAL
 from driver_hours_calculator.helper_functions import get_previous_sunday
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
 
 class WorkWeek:
     days_in_week = 7
-    def __init__(self, driver_report: 'SingleDriverReport', week_start: datetime=get_previous_sunday(1)): #Quotes around SingleDriverReport are for type checking import
+    def __init__(self, driver_report: 'SingleDriverReport', week_start): #Quotes around SingleDriverReport are for type checking import
         self.week_start = week_start
         self.driver_report = driver_report
         self.driver = driver_report.driver
@@ -84,7 +85,7 @@ class WorkWeek:
             f'Week: {self.week_start.date()} to {(self.week_start + timedelta(weeks=1)).date()}\n'
             f'Fleet: {self.driver.fleet.name}\n'
             f'Days Worked: {self.number_days_worked} '
-            f'Hours Worked: {self.total_hours}\n'
+            f'Hours Worked: {self.total_hours_worked}\n'
             f'Hours Per Day: {self.hours_per_day}\n'
             f'Total Pay: {self.total_pay} '
             f'Daily Pay: {self.pay_per_day} '
@@ -100,7 +101,10 @@ class WorkDay:
         self.calculate_info()
     
     def calculate_info(self):
-        self.hours_worked = round((self.stop_time - self.start_time).total_seconds() / self.seconds_in_hour, 2)
+        seconds_worked = (self.stop_time - self.start_time).total_seconds()
+        hours_worked = seconds_worked / self.seconds_in_hour
+        hours_worked = decimal.Decimal(str(hours_worked))
+        self.hours_worked = hours_worked.quantize(decimal.Decimal('0.01'), rounding=decimal.ROUND_DOWN)
         self.pay = self.calculate_pay(self.hours_worked)
 
     def calculate_pay(self, hours: int):

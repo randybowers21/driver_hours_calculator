@@ -1,15 +1,17 @@
 #PYTHON
 from datetime import datetime, timedelta
 import os
+from os.path import basename
 from typing import List
+from email.message import EmailMessage
+import smtplib
 #PIP
 import pandas as pd
-import win32com.client
 #LOCAL
 from driver_hours_calculator.errors import InvalidWorkTimesError
 from driver_hours_calculator.drivers import Driver, AllDrivers
 from driver_hours_calculator.work_periods import WorkWeek
-from driver_hours_calculator.helper_functions import get_previous_sunday
+import driver_hours_calculator.config as config
 
 class RawHoursReport:
     def __init__(self, omnitracs_file_name: str, week_start: datetime) -> None:
@@ -23,7 +25,8 @@ class RawHoursReport:
 
     def read_omnitracs_report(self, omnitracs_file_name: str) -> pd.DataFrame:
         """ Reads Omnitracs Driver Log Export Report CSV and returns Dataframe """
-        return pd.read_csv(omnitracs_file_name, header=1, parse_dates=['StartTime'])
+        dataframe = pd.read_csv(omnitracs_file_name, header=1, usecols=['DriverId', 'StartTime', 'Activity', 'Duration'],parse_dates=['StartTime'])
+        return dataframe
     
     def filter_dataframe_by_input_week_start(self):
         """ Resets dataframe filtered by input week_start """
@@ -35,7 +38,8 @@ class RawHoursReport:
 class SingleDriverReport:
     seconds_in_7_hours = 25200 #Time needed for government legal rest break 
     days_in_week = 7
-    def __init__(self, driver: Driver, driver_dataframe: pd.DataFrame) -> None:
+    def __init__(self, week_start: datetime ,driver: Driver, driver_dataframe: pd.DataFrame) -> None:
+        self.week_start = week_start
         self.driver = driver
         self.driver_hours_dataframe = driver_dataframe
         self.remove_midnight_times()
@@ -44,6 +48,7 @@ class SingleDriverReport:
     
         try:
             self.set_start_stop_times(self.all_times_worked)
+
         except InvalidWorkTimesError as e:
             print(e.message)
     
@@ -86,7 +91,6 @@ class SingleDriverReport:
 
     def set_start_stop_times(self, times_worked: List[datetime]):
         """ Sets start and stop times """
-        week_start = get_previous_sunday(1)
         self.start_times = []
         self.stop_times = []
 
@@ -95,7 +99,7 @@ class SingleDriverReport:
             stop_times = [time for i, time in enumerate(times_worked) if i % 2 != 0] #Every odd time is an end time
             #Add Times to list if start time is after the start of the week.
             for i, time in enumerate(start_times):
-                if time >= week_start:
+                if time >= self.week_start:
                     self.start_times.append(time)
                     self.stop_times.append(stop_times[i])
         else:
@@ -113,8 +117,9 @@ class FinalHoursReport:
             Creates work week for each driver in list and appends to list.
         """
         for driver in self.all_drivers.drivers:
-            driver_report = SingleDriverReport(driver, self.raw_hours_report.filter_dataframe_by_driver(driver.code))
+            driver_report = SingleDriverReport(self.week_start, driver, self.raw_hours_report.filter_dataframe_by_driver(driver.code))
             work_week = WorkWeek(driver_report, self.week_start)
+
             if work_week.total_hours_worked != 0:
                 self.driver_work_weeks.append(work_week)
 
@@ -150,30 +155,36 @@ class FinalHoursReport:
         return pd.DataFrame(info)
 
     def send_report_email(self, subject: str, message: str, recipients: List[str], attachment: str) -> None:
-        """ Sends report via email from local outlook profile. """
-        ol = win32com.client.Dispatch('Outlook.Application')
+        """ Sends report via email from gmail profile in config file. """
+        msg = EmailMessage()
+        msg['Subject'] = subject
+        msg['From'] = config.EMAIL_ADDRESS
+        msg['To'] = recipients
+        msg['Body'] = message
 
-        newmail = ol.CreateItem(0)
-        newmail.Subject = subject
-        newmail.To = '; '.join(recipients)
-        newmail.Body = message
+        with open(attachment, 'rb') as file:
+            file_data = file.read()
+            file_name = file.name
 
-        newmail.Attachments.Add(attachment)
+        msg.add_attachment(file_data, maintype='csv', subtype='csv', filename=basename(file_name))
 
-        newmail.Send()
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(config.EMAIL_ADDRESS, config.EMAIL_PASSWORD)
+            smtp.send_message(msg)
 
-    def generate_hours_report(self, TESTING=False) -> str:
+    def generate_hours_report(self, SAVE_FILE=True) -> str:
         """ 
             Creates driver work weeks and Saves Report dataframe to csv.
-            Returns the location of the new File.
+            If SAVE_FILE is True, Returns the location of the new File.
+            If SAVE_FILE is False, Returns the Dataframe.
         """
         self.set_driver_work_weeks()
         hours_dataframe = self.create_dataframe_for_csv()
         new_file_name = f'{os.path.dirname(os.getcwd())}/driver_hours_{self.week_start.date()}.csv'
-        if TESTING:
-            print('Test Completed')
-            return
-        hours_dataframe.to_csv(new_file_name)
-        print(f'\n<<<---Data saved to new CSV at: {new_file_name}--->>>\n')
-       
-        return new_file_name
+        if SAVE_FILE:
+            hours_dataframe.to_csv(new_file_name)
+            print(f'\n<<<---Data saved to new CSV at: {new_file_name}--->>>\n')
+            return new_file_name
+        else:
+            print(f'<<<---Dataframe Created for {self.week_start.date()}--->>>\n')
+            return hours_dataframe  
